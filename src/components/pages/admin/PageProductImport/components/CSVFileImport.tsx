@@ -30,8 +30,13 @@ export default function CSVFileImport({ url, title }: CSVFileImportProps) {
 
     try {
       setStatus("Requesting signed URL...");
+      const authorization_token = localStorage.getItem("authorization_token");
+
       const response = await axios.get(url, {
         params: { name: encodeURIComponent(file.name) },
+        headers: {
+          Authorization: `Basic ${authorization_token}`,
+        },
       });
 
       const signedUrl = response.data;
@@ -45,8 +50,17 @@ export default function CSVFileImport({ url, title }: CSVFileImportProps) {
 
       setStatus("Upload successful!");
       setFile(undefined);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Upload failed:", err);
+
+      if (axios.isAxiosError(err) && err.response) {
+        if (err.response.status === 401) {
+          alert("Unauthorized: Authorization header missing");
+        } else if (err.response.status === 403) {
+          alert("Forbidden: invalid authorization token");
+        }
+      }
+
       setStatus("Upload failed!");
     }
   };
